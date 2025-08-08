@@ -1,10 +1,15 @@
 package com.example.expensetracker.ui.screens.report
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.expensetracker.data.local.entity.ExpenseEntity
 import com.example.expensetracker.data.model.ExpenseCategory
 import com.example.expensetracker.data.repository.ExpenseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -12,50 +17,41 @@ class ExpenseReportViewModel @Inject constructor(
     private val repository: ExpenseRepository
 ) : ViewModel() {
 
-    val expenses: StateFlow<List<com.example.expensetracker.data.model.Expense>> = repository.expenses
+//    val expenses: StateFlow<List<ExpenseEntity>> = repository
+//        .getAllExpenses()
+//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun getTotalForLast7Days(): Map<String, Double> {
-        val now = System.currentTimeMillis()
-        val sevenDaysAgo = now - 6 * 24 * 60 * 60 * 1000
-        val filtered = expenses.value.filter { it.date >= sevenDaysAgo }
+    val expenses: StateFlow<List<ExpenseEntity>> = repository
+        .getAllExpenses()
+        .map { it.toList() } // 👈 ensures a new list instance every time
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        return (0..6).associate { dayOffset ->
-            val dayMillis = now - (dayOffset * 24 * 60 * 60 * 1000)
-            val dayLabel = "Day ${7 - dayOffset}"
-            val total = filtered.filter {
-                (it.date / (24 * 60 * 60 * 1000)) ==
-                        (dayMillis / (24 * 60 * 60 * 1000))
-            }.sumOf { it.amount }
-            dayLabel to total
-        }
-    }
+    val dailyCategoryData: StateFlow<List<Map<ExpenseCategory, Double>>> =
+        expenses.map { list ->
+            val now = System.currentTimeMillis()
+            val sevenDaysAgo = now - 6 * 24 * 60 * 60 * 1000
+            val filtered = list.filter { it.date >= sevenDaysAgo }
 
-    fun getCategoryTotals(): Map<ExpenseCategory, Double> {
-        val now = System.currentTimeMillis()
-        val sevenDaysAgo = now - 6 * 24 * 60 * 60 * 1000
-        val filtered = expenses.value.filter { it.date >= sevenDaysAgo }
-
-        return ExpenseCategory.values().associateWith { category ->
-            filtered.filter { it.category == category }.sumOf { it.amount }
-        }
-    }
-
-    fun getDailyCategoryTotals(): List<Map<ExpenseCategory, Double>> {
-        val now = System.currentTimeMillis()
-        val sevenDaysAgo = now - 6 * 24 * 60 * 60 * 1000
-        val filtered = expenses.value.filter { it.date >= sevenDaysAgo }
-
-        return (0..6).map { dayOffset ->
-            val dayMillis = now - (dayOffset * 24 * 60 * 60 * 1000)
-            val dailyMap = ExpenseCategory.values().associateWith { category ->
-                filtered.filter {
-                    (it.date / (24 * 60 * 60 * 1000)) ==
-                            (dayMillis / (24 * 60 * 60 * 1000)) &&
-                            it.category == category
-                }.sumOf { it.amount }
+            (0..6).map { dayOffset ->
+                val dayMillis = now - (dayOffset * 24 * 60 * 60 * 1000)
+                ExpenseCategory.values().associateWith { category ->
+                    filtered.filter {
+                        (it.date / (24 * 60 * 60 * 1000)) ==
+                                (dayMillis / (24 * 60 * 60 * 1000)) &&
+                                it.category == category
+                    }.sumOf { it.amount }
+                }
             }
-            dailyMap
-        }
-    }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val categoryTotals: StateFlow<Map<ExpenseCategory, Double>> =
+        expenses.map { list ->
+            val now = System.currentTimeMillis()
+            val sevenDaysAgo = now - 6 * 24 * 60 * 60 * 1000
+            val filtered = list.filter { it.date >= sevenDaysAgo }
+
+            ExpenseCategory.values().associateWith { category ->
+                filtered.filter { it.category == category }.sumOf { it.amount }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 }

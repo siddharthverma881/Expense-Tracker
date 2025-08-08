@@ -22,9 +22,8 @@ fun ExpenseReportScreen(
     navController: NavController,
     viewModel: ExpenseReportViewModel = hiltViewModel()
 ) {
-    val dailyTotals = viewModel.getTotalForLast7Days()
-    val categoryTotals = viewModel.getCategoryTotals()
-    val dailyCategoryData = viewModel.getDailyCategoryTotals()
+    val dailyCategoryData by viewModel.dailyCategoryData.collectAsState()
+    val categoryTotals by viewModel.categoryTotals.collectAsState()
 
     Column(
         modifier = Modifier
@@ -34,10 +33,12 @@ fun ExpenseReportScreen(
     ) {
         Text("7-Day Expense Report", style = MaterialTheme.typography.headlineSmall)
 
-        // Category-aware bar chart
-        CategoryBarChart(dailyCategoryData)
-
-        CategoryLegend()
+        if (dailyCategoryData.isNotEmpty()) {
+            CategoryBarChart(dailyCategoryData)
+            CategoryLegend()
+        } else {
+            Text("No data available", color = Color.Gray)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -47,7 +48,6 @@ fun ExpenseReportScreen(
         }
     }
 }
-
 @Composable
 fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
     val maxVal = max(

@@ -7,7 +7,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.expensetracker.data.model.ExpenseCategory
 import com.example.expensetracker.ui.components.DropdownMenuBox
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,48 +17,81 @@ fun ExpenseEntryScreen(
     navController: NavController,
     viewModel: ExpenseEntryViewModel = hiltViewModel()
 ) {
-    val title by viewModel.title.collectAsState()
-    val amount by viewModel.amount.collectAsState()
-    val category by viewModel.category.collectAsState()
-    val notes by viewModel.notes.collectAsState()
+    // Local UI state
+    var title by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf(ExpenseCategory.Food) }
+    var notes by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text("Add Expense", style = MaterialTheme.typography.headlineSmall)
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-        OutlinedTextField(
-            value = title,
-            onValueChange = { viewModel.title.value = it },
-            label = { Text("Title") }
-        )
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
 
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { viewModel.amount.value = it },
-            label = { Text("Amount (₹)") }
-        )
-
-        DropdownMenuBox(category, onCategorySelected = {
-            viewModel.category.value = it
-        })
-
-        OutlinedTextField(
-            value = notes,
-            onValueChange = { viewModel.notes.value = it },
-            label = { Text("Notes (optional)") },
-            maxLines = 2
-        )
-
-        Button(
-            onClick = {
-                viewModel.submitExpense()
-//                navController.navigate("list")
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Submit")
+            Text("Add Expense", style = MaterialTheme.typography.headlineSmall)
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = it },
+                label = { Text("Amount (₹)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenuBox(
+                selected = category,
+                onCategorySelected = { category = it }
+            )
+
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { notes = it },
+                label = { Text("Notes (optional)") },
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    if (title.isNotBlank() && amount.isNotBlank()) {
+                        coroutineScope.launch {
+                            viewModel.addExpense(
+                                amount = amount.toDoubleOrNull() ?: 0.0,
+                                category = category,
+                                description = notes,
+                                title = title,
+                                date = System.currentTimeMillis()
+                            )
+                            snackbarHostState.showSnackbar("Expense added")
+//                            navController.navigate("list") {
+//                                popUpTo("entry") { inclusive = true }
+//                            }
+                        }
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please fill required fields")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Submit")
+            }
         }
     }
 }
