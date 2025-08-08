@@ -60,6 +60,8 @@ dependencies {
     implementation "androidx.compose.ui:ui-tooling-preview"
     debugImplementation "androidx.compose.ui:ui-tooling"
 
+    // Core Material icons (small set)
+    implementation "androidx.compose.material:material-icons-core"
 
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "androidx.activity:activity-compose:1.7.2"
