@@ -17,10 +17,6 @@ class ExpenseReportViewModel @Inject constructor(
     private val repository: ExpenseRepository
 ) : ViewModel() {
 
-//    val expenses: StateFlow<List<ExpenseEntity>> = repository
-//        .getAllExpenses()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     val expenses: StateFlow<List<ExpenseEntity>> = repository
         .getAllExpenses()
         .map { it.toList() } // 👈 ensures a new list instance every time
