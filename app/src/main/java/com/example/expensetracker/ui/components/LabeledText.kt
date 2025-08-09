@@ -1,4 +1,4 @@
-package com.example.expensetracker.util
+package com.example.expensetracker.ui.components
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,7 +14,7 @@ fun LabeledText(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    labelColor: Color = Color.Black,
+    labelColor: Color = MaterialTheme.colorScheme.onSurface,
     valueColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium
 ) {

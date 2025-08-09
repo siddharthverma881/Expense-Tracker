@@ -94,4 +94,6 @@ dependencies {
 
     // Room with Kotlin coroutines & Flow
     implementation "androidx.room:room-ktx:2.6.1"
+
+    implementation "com.airbnb.android:lottie-compose:6.0.0"
 }

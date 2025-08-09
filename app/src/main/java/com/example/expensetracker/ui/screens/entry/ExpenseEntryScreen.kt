@@ -1,12 +1,17 @@
 package com.example.expensetracker.ui.screens.entry
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -15,8 +20,10 @@ import com.example.expensetracker.data.model.ExpenseCategory
 import com.example.expensetracker.ui.components.DropdownMenuBox
 import com.example.expensetracker.util.Utils.amountRegex
 import kotlinx.coroutines.launch
+import com.airbnb.lottie.compose.*
+import com.example.expensetracker.R
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ExpenseEntryScreen(
     navController: NavController,
@@ -35,6 +42,27 @@ fun ExpenseEntryScreen(
 
     var animateAlpha by remember { mutableStateOf(1f) }
 
+    val scrollState = rememberScrollState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.success_animation))
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        isPlaying = showSuccessAnimation,
+        iterations = 1,
+        speed = 1.0f,
+        restartOnPlay = true
+    )
+
+    // Detect when animation completes
+    LaunchedEffect(progress, showSuccessAnimation) {
+        if (showSuccessAnimation && progress == 1f) {
+            showSuccessAnimation = false
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -42,6 +70,7 @@ fun ExpenseEntryScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -121,7 +150,20 @@ fun ExpenseEntryScreen(
 
             Button(
                 onClick = {
-                    if (title.isNotBlank() && amount.isNotBlank()) {
+                    keyboardController?.hide()
+                    if(title.trim().isEmpty()){
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please enter title")
+                        }
+                    } else if(amount.trim().isEmpty()){
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please enter amount")
+                        }
+                    } else if(amount.trim().toDouble() <= 0){
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please enter valid amount")
+                        }
+                    } else {
                         coroutineScope.launch {
                             viewModel.addExpense(
                                 amount = amount.toDoubleOrNull() ?: 0.0,
@@ -130,27 +172,40 @@ fun ExpenseEntryScreen(
                                 title = title,
                                 date = System.currentTimeMillis()
                             )
-                            snackbarHostState.showSnackbar("Expense added")
-
-                            // Animate fade out then clear form and fade in
-                            animateAlpha = 0f
-                            kotlinx.coroutines.delay(300)
+                            // Clear fields immediately behind animation
                             title = ""
                             amount = ""
                             notes = ""
                             category = ExpenseCategory.Food
                             receiptImageUri = null
-                            animateAlpha = 1f
-                        }
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please fill required fields")
+
+                            // Show success animation immediately
+                            showSuccessAnimation = true
+
+                            // Show snackbar AFTER animation finishes or in parallel if you prefer:
+//                            snackbarHostState.showSnackbar("Expense added")
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Submit")
+            }
+        }
+
+        // Success animation overlay
+        if (showSuccessAnimation) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = composition,
+                    progress = progress,
+                    modifier = Modifier.size(150.dp)
+                )
             }
         }
     }
