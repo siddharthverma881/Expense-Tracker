@@ -13,13 +13,16 @@ import java.time.format.DateTimeFormatter
 
 object Utils {
 
+    // Allow only digits and max one decimal point
+    val amountRegex = Regex("^\\d*\\.?\\d*\$")
+
     fun formatDate(millis: Any): String {
-        try {
+        return try {
             val formatter = DateTimeFormatter.ofPattern("dd MMM yy")
             val localDate = Instant.ofEpochMilli(millis.toString().toLong()).atZone(ZoneId.systemDefault()).toLocalDate()
-            return localDate.format(formatter)
+            localDate.format(formatter)
         } catch (e: Exception){
-            return millis.toString()
+            millis.toString()
         }
     }
 

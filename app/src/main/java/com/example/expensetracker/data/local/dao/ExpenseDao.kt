@@ -18,4 +18,7 @@ interface ExpenseDao {
 
     @Query("DELETE FROM expenses WHERE id = :expenseId")
     suspend fun deleteExpense(expenseId: Int)
+
+    @Query("SELECT IFNULL(SUM(amount), 0) FROM expenses WHERE date >= :startEpoch AND date < :endEpoch")
+    fun getTotalAmountBetween(startEpoch: Long, endEpoch: Long): Flow<Double>
 }
