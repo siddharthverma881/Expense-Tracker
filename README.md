@@ -30,9 +30,9 @@ This project was developed as part of the *Smart Daily Expense Tracker — Full 
 ## 🆕 Additional Enhancements
 - **Bottom Navigation Bar** for quick switching between screens
 - **Theme Switcher** (Light/Dark mode toggle)
-- **Persistent Data Storage** using **Room** and **DataStore**
+- **Persistent Data Storage** using **Room**
 - **Smooth Animation on Expense Add**
-- **Validation** for non-empty title and amount > 0
+- **Validation** for expense entries
 - **Reusable UI Components** for consistent design and code reuse
 
 ---
@@ -108,6 +108,57 @@ This project was developed with **AI assistance** to:
 
 ---
 
+## 💬 Prompt Logs
+
+**Prompt 1:**  
+"Give me an MVVM architecture example for an Android app using Jetpack Compose with Room, StateFlow, and hilt dependency injection."
+
+**Prompt 2:**  
+"Create a Jetpack Compose screen for expense entry with Title, Amount, Category dropdown, Notes, and Submit button.  
+Add validation so Title, Amount is not empty and Amount is a valid double number."
+
+**Prompt 3:**  
+"Generate dao and entity for expense having auto generated primary key."
+
+**Prompt 4:**  
+"Implement a theme switcher (Light/Dark) in Jetpack Compose."
+
+**Prompt 5:**  
+"Add a bottom navigation bar to switch between three screens: Entry, List, and Report."
+
+**Prompt 6:**  
+"Generate Lottie animation code in Jetpack Compose that plays a success animation when an expense is added."
+
+**Prompt 7:**  
+"Show me how to get strings from strings.xml in a Snackbar message inside a Composable function."
+
+**Prompt 8:**  
+"Help me write a README.md file for my Smart Expense Tracker assignment, including features and tech stack."
+
+**Prompt 9:**  
+"Add detailed comments to my ExpenseEntryScreen, ExpenseListScreen, and ExpenseReportScreen files so they are easy to understand."
+
+---
+
+## 📥 Download APK
+
+You can download and install the latest version of the Smart Daily Expense Tracker here:
+
+[⬇ Download APK](https://github.com/siddharthverma881/Expense-Tracker/releases/download/Debug/expense-tracker-debug.apk)
+
+---
 ## 📸 Screenshots
-*(Add your app screenshots here)*
+
+### Expense Entry Screen
+<img src="screenshots/expense_entry.png" alt="Expense Entry" width="200"/>
+
+### Expense List Screen
+<img src="screenshots/expense_list_1.png" alt="Expense List 1" width="200"/>
+<img src="screenshots/expense_list_2.png" alt="Expense List 2" width="200"/>
+
+### Expense Report Screen
+<img src="screenshots/expense_report_visual.png" alt="Expense Report" width="200"/>
+
+### Dark Mode
+<img src="screenshots/dark_mode.png" alt="Dark Mode" width="200"/>
 
