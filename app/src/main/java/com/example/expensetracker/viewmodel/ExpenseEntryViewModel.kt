@@ -1,4 +1,4 @@
-package com.example.expensetracker.ui.screens.entry
+package com.example.expensetracker.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

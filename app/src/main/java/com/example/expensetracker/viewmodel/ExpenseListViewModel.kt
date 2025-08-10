@@ -1,4 +1,4 @@
-package com.example.expensetracker.ui.screens.list
+package com.example.expensetracker.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -51,13 +51,6 @@ class ExpenseListViewModel @Inject constructor(
 
     fun setSelectedDate(date: LocalDate) {
         _selectedDate.value = date
-    }
-
-    fun toggleGroupBy() {
-        _groupBy.value = when (_groupBy.value) {
-            GroupBy.TIME -> GroupBy.CATEGORY
-            GroupBy.CATEGORY -> GroupBy.TIME
-        }
     }
 
     fun setGroupBy(groupBy: GroupBy) {

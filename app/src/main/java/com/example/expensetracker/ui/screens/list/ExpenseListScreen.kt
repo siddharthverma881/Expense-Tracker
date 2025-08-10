@@ -2,56 +2,41 @@ package com.example.expensetracker.ui.screens.list
 
 import android.app.DatePickerDialog
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.expensetracker.R
 import com.example.expensetracker.ui.components.LabeledText
+import com.example.expensetracker.viewmodel.ExpenseListViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+/**
+ * Screen for viewing a list of expenses.
+ * Features:
+ * - Date picker to view past expenses
+ * - Grouping by category or time
+ * - Shows total count and amount for the day
+ * - Allows deleting expenses
+ */
 @Composable
 fun ExpenseListScreen(
-    navController: NavController,
     viewModel: ExpenseListViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
 
+    // Observed state from ViewModel
     val groupedExpenses by viewModel.groupedExpenses.collectAsState()
     val groupBy by viewModel.groupBy.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
@@ -60,6 +45,7 @@ fun ExpenseListScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
 
+    // Show date picker dialog when triggered
     if (showDatePicker) {
         val year = selectedDate.year
         val month = selectedDate.monthValue - 1
@@ -88,20 +74,26 @@ fun ExpenseListScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Date & Today Button Row
+        // Date selection row
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
+            // Selected date display
             Text(
                 text = "Date: ${selectedDate.format(DateTimeFormatter.ofPattern("dd MMM yy"))}",
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(Modifier.width(8.dp))
+
+            // Open date picker button
             IconButton(onClick = { showDatePicker = true }) {
                 Icon(painterResource(id = R.drawable.ic_calendar), contentDescription = "Pick Date")
             }
+
             Spacer(Modifier.weight(1f))
+
+            // Reset to today button
             TextButton(onClick = { viewModel.setSelectedDate(LocalDate.now()) }) {
                 Text("Today")
             }
@@ -109,7 +101,7 @@ fun ExpenseListScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // GroupBy toggle segmented buttons
+        // GroupBy selection
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Group by: ", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.width(8.dp))
@@ -117,25 +109,31 @@ fun ExpenseListScreen(
                 options = listOf("Category", "Time"),
                 selectedIndex = if (groupBy == ExpenseListViewModel.GroupBy.CATEGORY) 0 else 1,
                 onSelected = { index ->
-                    viewModel.setGroupBy(if (index == 0) ExpenseListViewModel.GroupBy.CATEGORY else ExpenseListViewModel.GroupBy.TIME)
+                    viewModel.setGroupBy(
+                        if (index == 0) ExpenseListViewModel.GroupBy.CATEGORY
+                        else ExpenseListViewModel.GroupBy.TIME
+                    )
                 }
             )
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // Totals
+        // Daily totals
         Text("Total Expenses: $totalCount", style = MaterialTheme.typography.bodyLarge)
         Text("Total Amount: ₹$totalAmount", style = MaterialTheme.typography.bodyLarge)
 
         Spacer(Modifier.height(16.dp))
 
+        // Empty state
         if (totalCount == 0) {
             Text("No expenses for selected date", style = MaterialTheme.typography.bodyLarge)
         } else {
+            // List of grouped expenses
             Crossfade(targetState = groupedExpenses, label = "ExpenseList") { expenses ->
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     expenses.forEach { (groupKey, expensesInGroup) ->
+                        // Header for category grouping
                         if (groupBy == ExpenseListViewModel.GroupBy.CATEGORY) {
                             item("header-$groupKey") {
                                 Text(
@@ -145,9 +143,11 @@ fun ExpenseListScreen(
                                 )
                             }
                         }
+
+                        // Expense cards
                         items(
                             items = expensesInGroup,
-                            key = { it.id } // assuming ExpenseEntity has unique id
+                            key = { it.id } // Unique ID from ExpenseEntity
                         ) { expense ->
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Row(
@@ -158,20 +158,22 @@ fun ExpenseListScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         LabeledText(
-                                            label = "Title",
+                                            label = stringResource(id = R.string.list_expense_title_label),
                                             value = expense.title
                                         )
                                         LabeledText(
-                                            label = "Amount",
+                                            label = stringResource(id = R.string.list_expense_amount_label),
                                             value = "₹${expense.amount}"
                                         )
                                         if (groupBy != ExpenseListViewModel.GroupBy.CATEGORY) {
                                             LabeledText(
-                                                label = "Category",
+                                                label = stringResource(id = R.string.list_expense_category_label),
                                                 value = expense.category.name
                                             )
                                         }
                                     }
+
+                                    // Delete expense button
                                     IconButton(
                                         onClick = { viewModel.deleteExpense(expense.id) }
                                     ) {
@@ -191,6 +193,13 @@ fun ExpenseListScreen(
     }
 }
 
+/**
+ * Segmented button toggle for switching between options (e.g., Category/Time grouping).
+ *
+ * @param options List of option labels
+ * @param selectedIndex Index of the currently selected option
+ * @param onSelected Callback when an option is selected
+ */
 @Composable
 fun SegmentedButtonToggle(
     options: List<String>,
@@ -215,7 +224,10 @@ fun SegmentedButtonToggle(
             ) {
                 Text(
                     text = option,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

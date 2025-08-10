@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">ExpenseTracker</string>
+    <string name="theme_dark_title">Dark</string>
+    <string name="theme_light_title">Light</string>
+
+    <!-- Expense Entry Screen Strings -->
+    <string name="expense_entry_title">Title</string>
+    <string name="expense_entry_amount">"Amount (₹)"</string>
+    <string name="expense_entry_notes">"Notes (optional)"</string>
+    <string name="receipt_add_message">Add Receipt Image</string>
+    <string name="receipt_remove_message">Remove Receipt Image</string>
+    <string name="title_empty_message">Please enter title</string>
+    <string name="amount_empty_message">Please enter amount</string>
+    <string name="invalid_amount_message">Please enter valid amount</string>
+    <string name="submit_expense_btn_text">Submit</string>
+
+    <!-- Expense List Screen Strings -->
+    <string name="list_expense_title_label">Title</string>
+    <string name="list_expense_amount_label">Amount</string>
+    <string name="list_expense_category_label">Category</string>
+
+    <!-- Expense Report Screen Strings -->
+    <string name="empty_report_message">No data available</string>
+    <string name="export_text">Export</string>
 </resources>

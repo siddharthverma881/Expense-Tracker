@@ -12,42 +12,50 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.expensetracker.data.model.ExpenseCategory
 import com.example.expensetracker.ui.components.DropdownMenuBox
 import com.example.expensetracker.util.Utils.amountRegex
 import kotlinx.coroutines.launch
 import com.airbnb.lottie.compose.*
 import com.example.expensetracker.R
+import com.example.expensetracker.viewmodel.ExpenseEntryViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+/**
+ * Screen for entering a new expense.
+ * Features:
+ * - Form with Title, Amount, Category, Notes, and optional Receipt Image
+ * - Validation before saving
+ * - Displays today's total spent
+ * - Success animation after saving
+ */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ExpenseEntryScreen(
-    navController: NavController,
     viewModel: ExpenseEntryViewModel = hiltViewModel()
 ) {
-    // Local UI state
+    // Local form state
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(ExpenseCategory.Food) }
     var notes by remember { mutableStateOf("") }
-    var receiptImageUri by remember { mutableStateOf<String?>(null) } // Mock image as URI string
+    var receiptImageUri by remember { mutableStateOf<String?>(null) } // Mock URI for receipt
 
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     val totalSpentToday by viewModel.totalSpentToday.collectAsState()
 
-    var animateAlpha by remember { mutableStateOf(1f) }
+    val animateAlpha by remember { mutableFloatStateOf(1f) }
 
     val scrollState = rememberScrollState()
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    // Lottie success animation setup
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.success_animation))
     var showSuccessAnimation by remember { mutableStateOf(false) }
-
     val progress by animateLottieCompositionAsState(
         composition = composition,
         isPlaying = showSuccessAnimation,
@@ -56,7 +64,7 @@ fun ExpenseEntryScreen(
         restartOnPlay = true
     )
 
-    // Detect when animation completes
+    // Hide success animation after it finishes playing
     LaunchedEffect(progress, showSuccessAnimation) {
         if (showSuccessAnimation && progress == 1f) {
             showSuccessAnimation = false
@@ -64,7 +72,7 @@ fun ExpenseEntryScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackBarHostState) }
     ) { paddingValues ->
 
         Column(
@@ -75,8 +83,10 @@ fun ExpenseEntryScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Screen title
             Text("Add Expense", style = MaterialTheme.typography.headlineSmall)
 
+            // Display today's total spent
             Text(
                 text = "Total Spent Today: ₹${"%.2f".format(totalSpentToday)}",
                 style = MaterialTheme.typography.titleMedium
@@ -87,13 +97,15 @@ fun ExpenseEntryScreen(
             Column(
                 modifier = Modifier.alpha(animateAlpha)
             ) {
+                // Title field
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Title") },
+                    label = { Text(stringResource(id = R.string.expense_entry_title)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Amount field (numeric only)
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { input ->
@@ -101,39 +113,45 @@ fun ExpenseEntryScreen(
                             amount = input
                         }
                     },
-                    label = { Text("Amount (₹)") },
+                    label = { Text(stringResource(id = R.string.expense_entry_amount)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
+                // Category dropdown
                 DropdownMenuBox(
                     selected = category,
                     onCategorySelected = { category = it }
                 )
 
+                // Notes field (max 100 chars)
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { if (it.length <= 100) notes = it },
-                    label = { Text("Notes (optional)") },
+                    label = { Text(stringResource(id = R.string.expense_entry_notes)) },
                     maxLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Mock Receipt Image upload button + preview
+                // Mock receipt image upload/remove button
                 Button(
                     onClick = {
-                        // For now just toggle mock URI to simulate picking image
                         receiptImageUri = if (receiptImageUri == null) "mock_uri" else null
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (receiptImageUri == null) "Add Receipt Image" else "Remove Receipt Image")
+                    Text(
+                        if (receiptImageUri == null)
+                            stringResource(id = R.string.receipt_add_message)
+                        else
+                            stringResource(id = R.string.receipt_remove_message)
+                    )
                 }
 
+                // Receipt preview (mock)
                 receiptImageUri?.let {
-                    // Just a placeholder box representing the image
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -148,48 +166,57 @@ fun ExpenseEntryScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Pre-fetch snackbar messages from strings.xml
+            val titleEmptyMessage = stringResource(id = R.string.title_empty_message)
+            val amountEmptyMessage = stringResource(id = R.string.amount_empty_message)
+            val invalidAmountMessage = stringResource(id = R.string.invalid_amount_message)
+
+            // Submit button with validation
             Button(
                 onClick = {
                     keyboardController?.hide()
-                    if(title.trim().isEmpty()){
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please enter title")
+                    when {
+                        title.trim().isEmpty() -> {
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(message = titleEmptyMessage)
+                            }
                         }
-                    } else if(amount.trim().isEmpty()){
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please enter amount")
+                        amount.trim().isEmpty() -> {
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(message = amountEmptyMessage)
+                            }
                         }
-                    } else if(amount.trim().toDouble() <= 0){
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please enter valid amount")
+                        amount.trim().toDouble() <= 0 -> {
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(message = invalidAmountMessage)
+                            }
                         }
-                    } else {
-                        coroutineScope.launch {
-                            viewModel.addExpense(
-                                amount = amount.toDoubleOrNull() ?: 0.0,
-                                category = category,
-                                description = notes,
-                                title = title,
-                                date = System.currentTimeMillis()
-                            )
-                            // Clear fields immediately behind animation
-                            title = ""
-                            amount = ""
-                            notes = ""
-                            category = ExpenseCategory.Food
-                            receiptImageUri = null
+                        else -> {
+                            coroutineScope.launch {
+                                // Add expense to DB
+                                viewModel.addExpense(
+                                    amount = amount.toDoubleOrNull() ?: 0.0,
+                                    category = category,
+                                    description = notes,
+                                    title = title,
+                                    date = System.currentTimeMillis()
+                                )
+                                // Clear form fields
+                                title = ""
+                                amount = ""
+                                notes = ""
+                                category = ExpenseCategory.Food
+                                receiptImageUri = null
 
-                            // Show success animation immediately
-                            showSuccessAnimation = true
-
-                            // Show snackbar AFTER animation finishes or in parallel if you prefer:
-//                            snackbarHostState.showSnackbar("Expense added")
+                                // Trigger success animation
+                                showSuccessAnimation = true
+                            }
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Submit")
+                Text(stringResource(id = R.string.submit_expense_btn_text))
             }
         }
 
@@ -203,7 +230,7 @@ fun ExpenseEntryScreen(
             ) {
                 LottieAnimation(
                     composition = composition,
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier.size(150.dp)
                 )
             }

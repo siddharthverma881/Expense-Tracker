@@ -23,25 +23,36 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import com.example.expensetracker.R
 import com.example.expensetracker.data.model.ExpenseCategory
 import com.example.expensetracker.ui.theme.CategoryColors
-import kotlinx.coroutines.flow.forEach
+import com.example.expensetracker.viewmodel.ExpenseReportViewModel
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 
+/**
+ * Expense Report screen.
+ * Shows 7-day expense trends with:
+ * - Stacked bar chart (daily category data)
+ * - Category legend
+ * - Daily totals
+ * - Category totals
+ * Includes option to export data as CSV and share it.
+ */
 @Composable
 fun ExpenseReportScreen(
-    navController: NavController,
     viewModel: ExpenseReportViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+
+    // Observing report data from ViewModel
     val dailyCategoryData by viewModel.dailyCategoryData.collectAsState()
     val categoryTotals by viewModel.categoryTotals.collectAsState()
     val dailyTotals by viewModel.dailyTotals.collectAsState()
@@ -58,11 +69,12 @@ fun ExpenseReportScreen(
         ) {
             Text("7-Day Expense Report", style = MaterialTheme.typography.headlineSmall)
 
+            // Chart section
             if (dailyCategoryData.isNotEmpty()) {
                 CategoryBarChart(dailyCategoryData.reversed())
                 CategoryLegend()
             } else {
-                Text("No data available", color = Color.Gray)
+                Text(stringResource(id = R.string.empty_report_message), color = Color.Gray)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -78,17 +90,14 @@ fun ExpenseReportScreen(
                     Text("Daily Totals:", style = MaterialTheme.typography.titleMedium)
                     dailyTotals.toSortedMap().forEach { (date, total) ->
                         Text(
-                            "${date.format(DateTimeFormatter.ofPattern("dd MMM"))}: ₹${
-                                "%.2f".format(
-                                    total
-                                )
-                            }",
+                            "${date.format(DateTimeFormatter.ofPattern("dd MMM"))}: ₹${"%.2f".format(total)}",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
 
+            // Category Totals section
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -107,9 +116,9 @@ fun ExpenseReportScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
         }
-        // Floating Action Button
+
+        // Floating Action Button for exporting CSV
         ExtendedFloatingActionButton(
             onClick = {
                 exportAndShareCSV(context, dailyCategoryData, categoryTotals)
@@ -120,7 +129,7 @@ fun ExpenseReportScreen(
                     contentDescription = "Share CSV"
                 )
             },
-            text = { Text("Export") },
+            text = { Text(stringResource(id = R.string.export_text)) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
@@ -128,7 +137,13 @@ fun ExpenseReportScreen(
     }
 }
 
-
+/**
+ * Exports expense report data as a CSV file and triggers a share intent.
+ *
+ * @param context Application context for file and intent handling
+ * @param dailyCategoryData List of maps containing daily expense amounts by category
+ * @param categoryTotals Total expense amount for each category over the report period
+ */
 private fun exportAndShareCSV(
     context: Context,
     dailyCategoryData: List<Map<ExpenseCategory, Double>>,
@@ -144,6 +159,7 @@ private fun exportAndShareCSV(
         ExpenseCategory.values().forEach { sb.append(",${it.name}") }
         sb.append("\n")
 
+        // Add daily data rows
         dailyCategoryData.reversed().forEachIndexed { index, dayData ->
             val date = today.minusDays((dailyCategoryData.size - 1 - index).toLong())
             sb.append(date.format(dateFormatter))
@@ -154,17 +170,18 @@ private fun exportAndShareCSV(
             sb.append("\n")
         }
 
+        // Category totals
         sb.append("\nCategory Totals\n")
         ExpenseCategory.values().forEach { category ->
             val total = categoryTotals[category] ?: 0.0
             sb.append("${category.name},${"%.2f".format(total)}\n")
         }
 
-        // Calculate total weekly expense (sum of all category totals)
+        // Grand total
         val totalWeeklyExpense = categoryTotals.values.sum()
         sb.append("\nTotal Weekly Expense,${"%.2f".format(totalWeeklyExpense)}\n")
 
-        // Write CSV to cache file
+        // Write CSV file to cache
         val fileName = "expense_report.csv"
         val file = File(context.cacheDir, fileName)
         FileOutputStream(file).use { fos ->
@@ -178,14 +195,12 @@ private fun exportAndShareCSV(
             file
         )
 
-        // Create share intent
+        // Create and launch share intent
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/csv"
             putExtra(Intent.EXTRA_STREAM, contentUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-
-        // Start share intent
         context.startActivity(
             Intent.createChooser(shareIntent, "Share Expense Report CSV")
         )
@@ -194,6 +209,11 @@ private fun exportAndShareCSV(
     }
 }
 
+/**
+ * Draws a stacked bar chart representing daily expense distribution by category.
+ *
+ * @param dailyCategoryData List of daily category-to-amount mappings
+ */
 @Composable
 fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
     val maxVal = max(
@@ -204,6 +224,7 @@ fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
     val dateFormatter = DateTimeFormatter.ofPattern("MMM dd")
 
     Column {
+        // Canvas for drawing stacked bars
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -214,10 +235,8 @@ fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
 
             dailyCategoryData.forEachIndexed { index, categoryMap ->
                 var accumulatedHeight = 0f
-
                 categoryMap.forEach { (category, amount) ->
                     val barHeight = ((amount / maxVal) * size.height).toFloat()
-
                     drawRoundRect(
                         color = CategoryColors[category] ?: Color.Gray,
                         topLeft = androidx.compose.ui.geometry.Offset(
@@ -227,12 +246,12 @@ fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
                         size = Size(barWidth, barHeight),
                         cornerRadius = CornerRadius(4f, 4f)
                     )
-
                     accumulatedHeight += barHeight
                 }
             }
         }
 
+        // X-axis labels (dates)
         Row(
             Modifier
                 .fillMaxWidth()
@@ -251,6 +270,9 @@ fun CategoryBarChart(dailyCategoryData: List<Map<ExpenseCategory, Double>>) {
     }
 }
 
+/**
+ * Displays a legend mapping colors to expense categories.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CategoryLegend() {

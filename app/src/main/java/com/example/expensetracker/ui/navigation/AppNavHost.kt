@@ -9,17 +9,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.expensetracker.R
 import com.example.expensetracker.ui.screens.entry.ExpenseEntryScreen
 import com.example.expensetracker.ui.screens.list.ExpenseListScreen
 import com.example.expensetracker.ui.screens.report.ExpenseReportScreen
-import com.example.expensetracker.R
-import com.example.expensetracker.ui.screens.SettingsViewModel
+import com.example.expensetracker.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +46,7 @@ fun AppNavHost(
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Text(
-                            text = if (isDarkTheme) "Dark" else "Light",
+                            text = if (isDarkTheme) stringResource(R.string.theme_dark_title) else stringResource(R.string.theme_light_title),
                             modifier = Modifier.padding(end = 10.dp)
                         )
                         Switch(
@@ -63,7 +64,12 @@ fun AppNavHost(
 
                 items.forEach { item ->
                     NavigationBarItem(
-                        icon = { Icon(painterResource(id = item.icon), contentDescription = item.title) },
+                        icon = {
+                            Icon(
+                                painterResource(id = item.icon),
+                                contentDescription = item.title
+                            )
+                        },
                         label = { Text(item.title) },
                         selected = currentRoute == item.route,
                         onClick = {
@@ -85,9 +91,9 @@ fun AppNavHost(
             startDestination = "entry",
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable("entry") { ExpenseEntryScreen(navController) }
-            composable("list") { ExpenseListScreen(navController) }
-            composable("report") { ExpenseReportScreen(navController) }
+            composable("entry") { ExpenseEntryScreen() }
+            composable("list") { ExpenseListScreen() }
+            composable("report") { ExpenseReportScreen() }
         }
     }
 }

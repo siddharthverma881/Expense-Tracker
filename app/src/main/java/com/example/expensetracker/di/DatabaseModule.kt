@@ -2,7 +2,7 @@ package com.example.expensetracker.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.expensetracker.ExpenseDatabase
+import com.example.expensetracker.base.ExpenseDatabase
 import com.example.expensetracker.data.local.dao.ExpenseDao
 import dagger.Module
 import dagger.Provides

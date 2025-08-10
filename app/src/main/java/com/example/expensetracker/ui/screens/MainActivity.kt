@@ -1,4 +1,4 @@
-package com.example.expensetracker
+package com.example.expensetracker.ui.screens
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,7 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.expensetracker.ui.navigation.AppNavHost
-import com.example.expensetracker.ui.screens.SettingsViewModel
+import com.example.expensetracker.viewmodel.SettingsViewModel
 import com.example.expensetracker.ui.theme.ExpenseTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
