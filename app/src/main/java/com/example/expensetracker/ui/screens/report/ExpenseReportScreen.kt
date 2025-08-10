@@ -68,35 +68,45 @@ fun ExpenseReportScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Daily Totals section
-            Text("Daily Totals:", style = MaterialTheme.typography.titleMedium)
-            dailyTotals.toSortedMap().forEach { (date, total) ->
-                Text(
-                    "${date.format(DateTimeFormatter.ofPattern("dd MMM"))}: ₹${"%.2f".format(total)}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Daily Totals:", style = MaterialTheme.typography.titleMedium)
+                    dailyTotals.toSortedMap().forEach { (date, total) ->
+                        Text(
+                            "${date.format(DateTimeFormatter.ofPattern("dd MMM"))}: ₹${
+                                "%.2f".format(
+                                    total
+                                )
+                            }",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Category Totals:", style = MaterialTheme.typography.titleMedium)
-            categoryTotals.forEach { (category, total) ->
-                Text(
-                    "${category.name}: ₹${"%.2f".format(total)}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Category Totals:", style = MaterialTheme.typography.titleMedium)
+                    categoryTotals.forEach { (category, total) ->
+                        Text(
+                            "${category.name}: ₹${"%.2f".format(total)}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-//            Button(
-//                onClick = {
-//                    exportAndShareCSV(context, dailyCategoryData, categoryTotals)
-//                },
-//                modifier = Modifier.fillMaxWidth()
-//            ) {
-//                Text("Export Report as CSV")
-//            }
-
 
         }
         // Floating Action Button
